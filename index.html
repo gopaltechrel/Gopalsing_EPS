@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>E-Procurement System — Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root{--brand:#0d6efd}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#f8fafc}
+    .card-anim{transition:transform .2s ease,box-shadow .2s ease}
+    .card-anim:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(13,110,253,.08)}
+    .fade-up{animation:fadeUp .45s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    .badge-status-open{background:#d1e7dd;color:#0f5132}
+    .badge-status-closed{background:#f8d7da;color:#842029}
+    .sidebar{max-height:78vh;overflow:auto}
+    .small-muted{font-size:.85rem;color:#6c757d}
+    .table-fixed{table-layout:fixed}
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="#">E‑Procurement</a>
+      <div class="d-flex gap-2 ms-auto">
+        <button class="btn btn-outline-secondary btn-sm" id="exportBtn">Export</button>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#tenderModal">New Tender</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="row">
+      <aside class="col-lg-3 sidebar mb-3">
+        <div class="card shadow-sm mb-3 card-anim fade-up">
+          <div class="card-body">
+            <h6 class="card-title">Suppliers</h6>
+            <p class="small-muted">Register suppliers who can bid on tenders.</p>
+            <div class="d-grid gap-2">
+              <button class="btn btn-sm btn-outline-primary" id="newSupplierBtn">Add supplier</button>
+              <button class="btn btn-sm btn-outline-secondary" id="loadDemoSup">Load demo suppliers</button>
+            </div>
+            <hr>
+            <ul id="supplierList" class="list-group list-group-flush mt-2" style="max-height:40vh;overflow:auto"></ul>
+          </div>
+        </div>
+
+        <div class="card shadow-sm card-anim fade-up">
+          <div class="card-body">
+            <h6 class="card-title">Quick Actions</h6>
+            <div class="d-grid gap-2">
+              <button class="btn btn-sm btn-outline-success" id="viewBidsBtn">View all bids</button>
+              <button class="btn btn-sm btn-outline-danger" id="clearAll">Clear all data</button>
+            </div>
+            <hr>
+            <div class="small-muted">All data is stored in your browser for this demo. Use export/import to move data.</div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div><h4 class="mb-0">Tenders</h4><div class="small-muted">Post tenders, receive bids, evaluate</div></div>
+          <div class="small-muted">Tenders: <span id="tenderCount">0</span> • Bids: <span id="bidCount">0</span></div>
+        </div>
+
+        <div id="tenderGrid" class="row g-3"></div>
+
+        <hr class="my-4">
+        <div class="card shadow-sm"><div class="card-body"><h6>Activity / Debug</h6><pre id="debug" class="p-2 bg-light" style="max-height:180px;overflow:auto;display:none"></pre></div></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Tender Modal -->
+  <div class="modal fade" id="tenderModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <form id="tenderForm"><div class="modal-header"><h5 class="modal-title">Create Tender</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><input id="tenderTitle" class="form-control" placeholder="Tender title" required></div>
+        <div class="mb-2"><textarea id="tenderDesc" class="form-control" placeholder="Description"></textarea></div>
+        <div class="row g-2"><div class="col-md-6"><input id="tenderBudget" type="number" class="form-control" placeholder="Estimated budget"/></div><div class="col-md-6"><input id="tenderDue" type="date" class="form-control"/></div></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" type="submit">Post Tender</button><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+    </form>
+  </div></div></div>
+
+  <!-- Supplier Modal -->
+  <div class="modal fade" id="supplierModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <form id="supplierForm"><div class="modal-header"><h5 class="modal-title">Add Supplier</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="supplierId">
+        <div class="mb-2"><input id="supplierName" class="form-control" placeholder="Supplier name" required></div>
+        <div class="mb-2"><input id="supplierEmail" type="email" class="form-control" placeholder="Email"/></div>
+        <div class="mb-2"><input id="supplierPhone" class="form-control" placeholder="Phone"/></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" type="submit">Save Supplier</button><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+    </form>
+  </div></div></div>
+
+  <!-- Bid Modal -->
+  <div class="modal fade" id="bidModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <form id="bidForm"><div class="modal-header"><h5 class="modal-title">Submit Bid</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="bidTenderId">
+        <div class="mb-2"><select id="bidSupplier" class="form-select" required></select></div>
+        <div class="mb-2"><input id="bidAmount" type="number" class="form-control" placeholder="Bid amount" required></div>
+        <div class="mb-2"><textarea id="bidNote" class="form-control" placeholder="Note / proposal link"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" type="submit">Submit Bid</button><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+    </form>
+  </div></div></div>
+
+  <!-- Bids List Modal -->
+  <div class="modal fade" id="bidsListModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Bids</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><div id="bidsListContainer"></div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>
+
+  <!-- Confirm Modal -->
+  <div class="modal fade" id="confirmModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body" id="confirmBody"></div><div class="modal-footer"><button class="btn btn-danger" id="confirmYes">Yes</button><button class="btn btn-secondary" data-bs-dismiss="modal">No</button></div></div></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Simple client-side E-Procurement demo
+    const STORAGE_KEY = 'eproc_v1';
+    let state = { suppliers: [], tenders: [], bids: [] };
+    function uid(){return Math.random().toString(36).slice(2,9)}
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function load(){ const raw = localStorage.getItem(STORAGE_KEY); state = raw?JSON.parse(raw):{suppliers:[],tenders:[],bids:[]}; }
+
+    // refs
+    const supplierList = document.getElementById('supplierList');
+    const tenderGrid = document.getElementById('tenderGrid');
+
+    // render suppliers
+    function renderSuppliers(){ supplierList.innerHTML=''; state.suppliers.forEach(s=>{
+      const li = document.createElement('li'); li.className='list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `<div><strong>${escapeHtml(s.name)}</strong><div class="small-muted">${escapeHtml(s.email||'')}</div></div>
+                      <div><button class="btn btn-sm btn-outline-secondary me-1" data-edit-supp="${s.id}">Edit</button><button class="btn btn-sm btn-danger" data-del-supp="${s.id}">Delete</button></div>`;
+      supplierList.appendChild(li);
+    }); populateBidSupplierSelect(); }
+
+    // render tenders
+    function renderTenders(){ tenderGrid.innerHTML=''; const now = Date.now(); state.tenders.forEach(t=>{
+      const col = document.createElement('div'); col.className='col-12 col-md-6 col-lg-4';
+      const bidsFor = state.bids.filter(b=>b.tenderId===t.id);
+      const lowest = bidsFor.length? Math.min(...bidsFor.map(b=>b.amount)) : null;
+      col.innerHTML = `
+        <div class="card shadow-sm card-anim fade-up">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <h6 class="mb-1">${escapeHtml(t.title)}</h6>
+              <div class="text-end"><div class="small-muted">${t.due? new Date(t.due).toLocaleDateString() : 'No due'}</div></div>
+            </div>
+            <p class="small-muted mb-2">${escapeHtml(t.description||'—')}</p>
+            <div class="d-flex gap-2 align-items-center">
+              <button class="btn btn-sm btn-primary" data-action="bid" data-id="${t.id}">Bid</button>
+              <button class="btn btn-sm btn-outline-secondary" data-action="viewBids" data-id="${t.id}">View Bids</button>
+              <button class="btn btn-sm btn-outline-success ms-auto" data-action="evaluate" data-id="${t.id}">Evaluate</button>
+            </div>
+            <div class="mt-2 small-muted">Bids: ${bidsFor.length} • Lowest: ${lowest!==null? lowest : '—'}</div>
+          </div>
+        </div>
+      `;
+      tenderGrid.appendChild(col);
+    }); document.getElementById('tenderCount').textContent = state.tenders.length; document.getElementById('bidCount').textContent = state.bids.length; }
+
+    // escape
+    function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // populate supplier select for bids
+    function populateBidSupplierSelect(){ const sel = document.getElementById('bidSupplier'); sel.innerHTML=''; state.suppliers.forEach(s=>{ const o = document.createElement('option'); o.value = s.id; o.text = s.name; sel.appendChild(o); }); if(sel.options.length===0){ const o=document.createElement('option'); o.value=''; o.text='No suppliers'; sel.appendChild(o); } }
+
+    // event handlers
+    document.getElementById('newSupplierBtn').addEventListener('click', ()=>{ document.getElementById('supplierForm').reset(); document.getElementById('supplierId').value=''; var md=new bootstrap.Modal(document.getElementById('supplierModal')); md.show(); });
+    document.getElementById('supplierForm').addEventListener('submit',(e)=>{ e.preventDefault(); const id=document.getElementById('supplierId').value; const name=document.getElementById('supplierName').value.trim(); const email=document.getElementById('supplierEmail').value.trim(); const phone=document.getElementById('supplierPhone').value.trim(); if(!name) return alert('Name required'); if(id){ const s = state.suppliers.find(x=>x.id===id); Object.assign(s,{name,email,phone}); } else { state.suppliers.push({id:uid(),name,email,phone}); } save(); renderSuppliers(); bootstrap.Modal.getInstance(document.getElementById('supplierModal')).hide(); });
+
+    document.getElementById('supplierList').addEventListener('click',(e)=>{ const edit = e.target.getAttribute('data-edit-supp'); const del = e.target.getAttribute('data-del-supp'); if(edit){ const s = state.suppliers.find(x=>x.id===edit); if(!s) return; document.getElementById('supplierId').value=s.id; document.getElementById('supplierName').value=s.name; document.getElementById('supplierEmail').value=s.email||''; document.getElementById('supplierPhone').value=s.phone||''; var md=new bootstrap.Modal(document.getElementById('supplierModal')); md.show(); }
+      if(del){ if(!confirm('Delete supplier? This will remove their bids.')) return; state.suppliers = state.suppliers.filter(x=>x.id!==del); state.bids = state.bids.filter(b=>b.supplierId!==del); save(); renderSuppliers(); renderTenders(); }
+    });
+
+    // tender create
+    document.getElementById('tenderForm').addEventListener('submit',(e)=>{ e.preventDefault(); const title=document.getElementById('tenderTitle').value.trim(); const desc=document.getElementById('tenderDesc').value.trim(); const budget = parseFloat(document.getElementById('tenderBudget').value) || null; const due=document.getElementById('tenderDue').value||null; if(!title) return alert('Title required'); state.tenders.push({ id: uid(), title, description: desc, budget, due, status: 'open', created: Date.now() }); save(); renderTenders(); bootstrap.Modal.getInstance(document.getElementById('tenderModal')).hide(); document.getElementById('tenderForm').reset(); });
+
+    // tender actions (bid/view/evaluate)
+    document.getElementById('tenderGrid').addEventListener('click',(e)=>{
+      const action = e.target.getAttribute('data-action'); const id = e.target.getAttribute('data-id'); if(!action) return; const tender = state.tenders.find(t=>t.id===id); if(!tender) return;
+      if(action==='bid'){ document.getElementById('bidForm').reset(); document.getElementById('bidTenderId').value = id; populateBidSupplierSelect(); var md=new bootstrap.Modal(document.getElementById('bidModal')); md.show(); }
+      if(action==='viewBids'){ openBidsList(id); }
+      if(action==='evaluate'){ evaluateTender(id); }
+    });
+
+    // submit bid
+    document.getElementById('bidForm').addEventListener('submit',(e)=>{ e.preventDefault(); const tenderId = document.getElementById('bidTenderId').value; const supplierId = document.getElementById('bidSupplier').value; const amount = parseFloat(document.getElementById('bidAmount').value); const note = document.getElementById('bidNote').value.trim(); if(!supplierId) return alert('Select supplier'); if(!amount || amount<=0) return alert('Enter valid amount'); state.bids.push({ id: uid(), tenderId, supplierId, amount, note, created: Date.now(), status:'submitted' }); save(); renderTenders(); bootstrap.Modal.getInstance(document.getElementById('bidModal')).hide(); alert('Bid submitted (demo)'); });
+
+    // open bids list
+    function openBidsList(tenderId){ const container = document.getElementById('bidsListContainer'); container.innerHTML=''; const bids = state.bids.filter(b=>b.tenderId===tenderId).sort((a,b)=>a.amount-b.amount);
+      if(bids.length===0){ container.innerHTML='<div class="text-muted">No bids yet.</div>'; } else {
+        bids.forEach(b=>{
+          const s = state.suppliers.find(x=>x.id===b.supplierId) || {name:'Unknown'};
+          const div = document.createElement('div'); div.className='card mb-2'; div.innerHTML = `<div class="card-body d-flex justify-content-between align-items-start"><div><strong>${escapeHtml(s.name)}</strong><div class="small-muted">${escapeHtml(s.email||'')}</div><div class="mt-1 small-muted">${escapeHtml(b.note||'')}</div></div><div class="text-end"><div><strong>₹ ${b.amount}</strong></div><div class="small-muted">${new Date(b.created).toLocaleString()}</div><div class="mt-2"><button class="btn btn-sm btn-outline-primary" data-action="accept" data-id="${b.id}">Accept</button> <button class="btn btn-sm btn-outline-danger" data-action="reject" data-id="${b.id}">Reject</button></div></div></div>`;
+          container.appendChild(div);
+        });
+      }
+      var md = new bootstrap.Modal(document.getElementById('bidsListModal')); md.show();
+    }
+
+    // accept/reject bid
+    document.getElementById('bidsListContainer').addEventListener('click',(e)=>{
+      const action = e.target.getAttribute('data-action'); const id = e.target.getAttribute('data-id'); if(!action) return; const bid = state.bids.find(x=>x.id===id); if(!bid) return;
+      if(action==='accept'){ // mark tender awarded
+        const tender = state.tenders.find(t=>t.id===bid.tenderId); if(!tender) return; tender.status = 'closed'; bid.status = 'accepted'; save(); renderTenders(); alert('Bid accepted. Tender closed. (demo)'); bootstrap.Modal.getInstance(document.getElementById('bidsListModal')).hide(); }
+      if(action==='reject'){ bid.status = 'rejected'; save(); renderTenders(); alert('Bid rejected (demo)'); openBidsList(bid.tenderId); }
+    });
+
+    // evaluate tender automatically (e.g., choose lowest valid bid)
+    function evaluateTender(tenderId){ const bids = state.bids.filter(b=>b.tenderId===tenderId && b.status==='submitted'); if(bids.length===0) return alert('No bids to evaluate'); const lowest = bids.reduce((a,b)=> a.amount < b.amount? a:b ); // lowest by amount
+      // confirm
+      if(!confirm(`Auto-evaluate: award to ${getSupplierName(lowest.supplierId)} for ₹${lowest.amount}?`)) return;
+      // apply
+      state.bids.forEach(b=>{ if(b.tenderId===tenderId){ b.status = (b.id===lowest.id)? 'accepted':'rejected'; } }); const tender = state.tenders.find(t=>t.id===tenderId); if(tender) tender.status='closed'; save(); renderTenders(); alert('Tender awarded (demo)'); }
+
+    function getSupplierName(id){ const s = state.suppliers.find(x=>x.id===id); return s? s.name : 'Unknown'; }
+
+    // view all bids
+    document.getElementById('viewBidsBtn').addEventListener('click', ()=>{
+      const container = document.getElementById('bidsListContainer'); container.innerHTML=''; if(state.bids.length===0) container.innerHTML='<div class="text-muted">No bids yet.</div>';
+      state.bids.slice().sort((a,b)=>b.created-a.created).forEach(b=>{
+        const s = state.suppliers.find(x=>x.id===b.supplierId) || {name:'Unknown'}; const t = state.tenders.find(x=>x.id===b.tenderId) || {title:'—'};
+        const div = document.createElement('div'); div.className='card mb-2'; div.innerHTML = `<div class="card-body d-flex justify-content-between"><div><strong>${escapeHtml(s.name)}</strong> <div class="small-muted">Bid for: ${escapeHtml(t.title)}</div><div class="mt-1 small-muted">${escapeHtml(b.note||'')}</div></div><div class="text-end"><div><strong>₹ ${b.amount}</strong></div><div class="small-muted">${new Date(b.created).toLocaleString()}</div></div></div>`; container.appendChild(div);
+      }); var md = new bootstrap.Modal(document.getElementById('bidsListModal')); md.show(); });
+
+    // export / import
+    document.getElementById('exportBtn').addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='eproc-data.json'; a.click(); URL.revokeObjectURL(url); });
+
+    // clear all
+    document.getElementById('clearAll').addEventListener('click', ()=>{ if(!confirm('Clear all tenders, suppliers and bids?')) return; state = { suppliers:[], tenders:[], bids:[] }; save(); renderSuppliers(); renderTenders(); });
+
+    // load demo suppliers
+    document.getElementById('loadDemoSup').addEventListener('click', ()=>{ state.suppliers.push({id:uid(),name:'Alpha Supplies',email:'alpha@supplies.example',phone:'9876543210'}); state.suppliers.push({id:uid(),name:'Beta Traders',email:'beta@traders.example',phone:'9123456780'}); save(); renderSuppliers(); alert('Demo suppliers added'); });
+
+    // click handlers for tender grid (delegated earlier)
+
+    // init
+    load(); renderSuppliers(); renderTenders();
+
+    // helper get name
+    function getSupplierName(id){ const s = state.suppliers.find(x=>x.id===id); return s? s.name : '—'; }
+
+    // utility: escape defined above
+
+    // keyboard debug (Ctrl+D)
+    window.addEventListener('keydown',(e)=>{ if(e.ctrlKey && e.key.toLowerCase()==='d'){ const dbg = document.getElementById('debug'); dbg.style.display = dbg.style.display==='none'?'block':'none'; dbg.textContent = JSON.stringify(state,null,2); } });
+  </script>
+</body>
+</html>
